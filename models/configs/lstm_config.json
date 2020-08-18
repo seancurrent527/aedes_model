@@ -1,0 +1,22 @@
+{
+    "model": "lstm_model",
+    "data": {
+        "data_shape": [90, 6],
+        "samples_per_city": 1000
+    },
+    "compile": { 
+        "optimizer": "Adam",
+        "learning_rate": 0.0001,
+        "loss": "mse"
+    },
+    "fit": {
+        "batch_size": 128,
+        "epochs": 30
+    },
+    "files": {
+        "training": "~/Documents/Projects/aedes_model/Data/train_data",
+        "validation": "~/Documents/Projects/aedes_model/Data/val_data",
+        "testing": "~/Documents/Projects/aedes_model/Data/test_data",
+        "model": "~/Documents/Projects/aedes_model/saved_models/lstm_model.tf"
+    }
+}
