@@ -49,9 +49,9 @@ def main():
         model = getattr(models, config['model'])(config['data']['data_shape'])
     
     # get the data
-    training = pd.read_pickle(config['files']['training'])
-    validation = pd.read_pickle(config['files']['validation'])
-    testing = pd.read_pickle(config['files']['testing'])
+    training = pd.read_pickle(os.path.expanduser(config['files']['training']))
+    validation = pd.read_pickle(os.path.expanduser(config['files']['validation']))
+    testing = pd.read_pickle(os.path.expanduser(config['files']['testing']))
     training, scaler = format_data(training, config['data']['data_shape'], config['data']['samples_per_city'],
                                    scaler=MinMaxScaler(), fit_scaler=True)
     validation = format_data(validation, config['data']['data_shape'], config['data']['samples_per_city'],
@@ -71,7 +71,7 @@ def main():
         model.compile(optimizer = getattr(tf.keras.optimizers, config['compile']['optimizer'])(lr = config['compile']['learning_rate']),
                       loss = config['compile']['loss'], metrics = [r2_keras])
         model.fit(X_train, y_train, validation_data = (X_val, y_val), **config['fit'])
-        model.save(config['files']['model'])
+        model.save(os.path.expanduser(config['files']['model']))
 
 if __name__ == '__main__':
     main()
