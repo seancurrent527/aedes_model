@@ -10,13 +10,13 @@
         "loss": "mse"
     },
     "fit": {
-        "batch_size": 128,
-        "epochs": 30
+        "batch_size": 64,
+        "epochs": 100
     },
     "files": {
         "training": "~/Documents/Projects/aedes_model/Data/train_data",
         "validation": "~/Documents/Projects/aedes_model/Data/val_data",
         "testing": "~/Documents/Projects/aedes_model/Data/test_data",
-        "model": "~/Documents/Projects/aedes_model/saved_models/lstm_model.tf"
+        "model": "~/Documents/Projects/aedes_model/models/saved_models/lstm_model/"
     }
 }
