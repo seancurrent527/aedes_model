@@ -17,6 +17,6 @@
         "training": "~/Documents/Projects/aedes_model/Data/train_data",
         "validation": "~/Documents/Projects/aedes_model/Data/val_data",
         "testing": "~/Documents/Projects/aedes_model/Data/test_data",
-        "model": "~/Documents/Projects/aedes_model/models/saved_models/conv_model/"
+        "model": "~/Documents/Projects/aedes_model/models/saved_models/conv_model.h5"
     }
 }

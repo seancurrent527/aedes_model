@@ -46,8 +46,10 @@ def main():
         config['files'][key] = value.replace('/', '\\')
 
     # load the model as necessary
-    if args.load and os.path.exists(config['files']['model']):
-        model = tf.keras.models.load_model(config['files']['model'], custom_objects = r2_keras)
+    model_file = os.path.expanduser(config['files']['model'])
+    if args.load and os.path.exists(model_file):
+        model = tf.keras.models.load_model(model_file, custom_objects = {'r2_keras': r2_keras})
+        print('MODEL LOADED')
     else:
         model = getattr(models, config['model'])(config['data']['data_shape'])
     
@@ -74,7 +76,7 @@ def main():
                       loss = config['compile']['loss'], metrics = [r2_keras])
         history = model.fit(X_train, y_train, validation_data = (X_val, y_val), **config['fit'],
                   callbacks = [tf.keras.callbacks.TensorBoard(), tf.keras.callbacks.EarlyStopping(patience = 30, restore_best_weights = True)])
-        model.save(os.path.expanduser(config['files']['model']))
+        model.save(model_file, save_format = 'h5')
 
         visuals.plot_loss(history)
         visuals.plot_r2(history)
