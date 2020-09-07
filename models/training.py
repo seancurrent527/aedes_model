@@ -21,9 +21,13 @@ def format_data(data, data_shape, samples_per_city, scaler = None, fit_scaler = 
         scaler.fit(data.iloc[:, -(data_shape[1] + 1):])
     groups = data.groupby(by = 0)
     data = []
-    for _, subset in groups:
-        random_indices = np.random.randint(0, len(subset) - (data_shape[0] + 1), size = samples_per_city)
-        for i in range(samples_per_city):
+    double_peak_cities = set(pd.read_csv(os.path.expanduser('~/Documents/Projects/aedes_model/Data/double_peak.csv'), squeeze=True, index_col=0))
+    for city, subset in groups:
+        multiplier = 1
+        if city in double_peak_cities:
+            multiplier = 2
+        random_indices = np.random.randint(0, len(subset) - (data_shape[0] + 1), size = multiplier * samples_per_city)
+        for i in range(len(random_indices)):
             random_index= random_indices[i]
             data.append(scaler.transform(subset.iloc[random_index: random_index + data_shape[0], -(data_shape[1] + 1):].values))
     return np.array(data) if not fit_scaler else (np.array(data), scaler)
@@ -52,7 +56,7 @@ def main():
         print('MODEL LOADED')
     else:
         model = getattr(models, config['model'])(config['data']['data_shape'])
-    
+     
     # get the data
     training = pd.read_pickle(os.path.expanduser(config['files']['training']))
     validation = pd.read_pickle(os.path.expanduser(config['files']['validation']))
