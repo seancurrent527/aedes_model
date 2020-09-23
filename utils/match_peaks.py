@@ -56,7 +56,7 @@ def smooth_data(data, rounds = 1):
     for _ in range(rounds):
         data = savgol_filter(data, 11, 3)
         data[data < 0] = 0
-    return data / data.max()
+    return data# / data.max()
 
 def peak_finder(array, threshold = 0.8, peak_width = 5):
     peaks = set()
@@ -174,7 +174,7 @@ def main():
     ax2.set_ylabel('Days')
     ax2.set_xlabel('Threshold')
 
-    ax1.set_title(f'Peaks vs Threshold for LSTM model with minimum peak width = {args.width}')
+    ax1.set_title(f'Peaks vs Threshold for GRU model with minimum peak width = {args.width}')
 
     ax1.legend(loc = 1, bbox_to_anchor = (1.05, 1))
     ax2.legend(loc = 1, bbox_to_anchor = (1.05, 1))

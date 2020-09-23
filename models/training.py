@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('-l', '--load', action='store_true', help='Whether or not to load a previously defined model.')
     return parser.parse_args()
 
-def format_data(data, data_shape, samples_per_city, scaler = None, fit_scaler = False):
+def format_data(data, data_shape, samples_per_city, scaler = None, fit_scaler = False, double_peak_multiplier=1):
     data.columns = range(0, len(data.columns))
     if fit_scaler:
         scaler.fit(data.iloc[:, -(data_shape[1] + 1):])
@@ -25,7 +25,7 @@ def format_data(data, data_shape, samples_per_city, scaler = None, fit_scaler = 
     for city, subset in groups:
         multiplier = 1
         if city in double_peak_cities:
-            multiplier = 2
+            multiplier = double_peak_multiplier
         random_indices = np.random.randint(0, len(subset) - (data_shape[0] + 1), size = multiplier * samples_per_city)
         for i in range(len(random_indices)):
             random_index= random_indices[i]
@@ -62,11 +62,21 @@ def main():
     validation = pd.read_pickle(os.path.expanduser(config['files']['validation']))
     testing = pd.read_pickle(os.path.expanduser(config['files']['testing']))
     training, scaler = format_data(training, config['data']['data_shape'], config['data']['samples_per_city'],
-                                   scaler=MinMaxScaler(), fit_scaler=True)
+                                   scaler=MinMaxScaler(), fit_scaler=True,
+                                   double_peak_multiplier=config['data']['double_peak_multiplier'])
     validation = format_data(validation, config['data']['data_shape'], config['data']['samples_per_city'],
                              scaler=scaler)
     testing = format_data(testing, config['data']['data_shape'], config['data']['samples_per_city'],
                           scaler=scaler)
+
+    temp_training = np.random.randint(0, len(training) - 1, size = 30000)
+    hi_temp = training[temp_training[:15000]]
+    lo_temp = training[temp_training[15000:]]
+    hi_temp[:, :, :2] = np.random.normal(1.1, 0.05, size = (len(hi_temp), config['data']['data_shape'][0], 2))
+    hi_temp[:, :, -1] = 0
+    lo_temp[:, :, :2] = np.random.normal(-0.1, 0.05, size = (len(lo_temp), config['data']['data_shape'][0], 2))
+    lo_temp[:, :, -1] = 0
+    training = np.concatenate([training, hi_temp, lo_temp])
     X_train, y_train = split_and_shuffle(training)
     X_val, y_val = split_and_shuffle(validation)
     X_test, y_test = split_and_shuffle(testing)
