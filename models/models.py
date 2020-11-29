@@ -9,7 +9,9 @@ def conv_model(input_shape):
     h1 = tf.keras.layers.BatchNormalization()(c2)
     h2 = tf.keras.layers.Flatten()(h1)
     h3 = tf.keras.layers.Dense(64, activation = 'relu')(h2)
+    h3 = tf.keras.layers.Dropout(0.2)(h3)
     h4 = tf.keras.layers.Dense(64, activation = 'relu')(h3)
+    h4 = tf.keras.layers.Dropout(0.2)(h4)
 
     xout = tf.keras.layers.Dense(1, activation = 'relu', kernel_regularizer = tf.keras.regularizers.l2(0.001))(h4)
     

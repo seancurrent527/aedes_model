@@ -1,9 +1,9 @@
 {
-    "model": "conv_model",
+    "model": "lstm_model",
     "data": {
         "data_shape": [90, 4],
         "samples_per_city": 1000,
-        "double_peak_multiplier": 1
+        "double_peak_multiplier": 3
     },
     "compile": { 
         "optimizer": "Adam",
@@ -18,6 +18,6 @@
         "training": "~/Documents/Projects/aedes_model/Data/train_data.pd",
         "validation": "~/Documents/Projects/aedes_model/Data/val_data.pd",
         "testing": "~/Documents/Projects/aedes_model/Data/test_data.pd",
-        "model": "~/Documents/Projects/aedes_model/models/saved_models/conv_model.h5"
+        "model": "~/Documents/Projects/aedes_model/models/saved_models/lstm_model_oversampled.h5"
     }
 }

@@ -69,6 +69,7 @@ def main():
     testing = format_data(testing, config['data']['data_shape'], config['data']['samples_per_city'],
                           scaler=scaler)
 
+    
     temp_training = np.random.randint(0, len(training) - 1, size = 30000)
     hi_temp = training[temp_training[:15000]]
     lo_temp = training[temp_training[15000:]]
@@ -76,7 +77,8 @@ def main():
     hi_temp[:, :, -1] = 0
     lo_temp[:, :, :2] = np.random.normal(-0.1, 0.05, size = (len(lo_temp), config['data']['data_shape'][0], 2))
     lo_temp[:, :, -1] = 0
-    training = np.concatenate([training, hi_temp, lo_temp])
+    #training = np.concatenate([training, hi_temp, lo_temp])
+    
     X_train, y_train = split_and_shuffle(training)
     X_val, y_val = split_and_shuffle(validation)
     X_test, y_test = split_and_shuffle(testing)
