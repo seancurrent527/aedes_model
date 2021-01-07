@@ -3,7 +3,8 @@
     "data": {
         "data_shape": [90, 4],
         "samples_per_city": 1000,
-        "double_peak_multiplier": 1
+        "double_peak_multiplier": 1,
+        "temperature_augmentation": false
     },
     "compile": { 
         "optimizer": "Adam",
@@ -15,9 +16,9 @@
         "epochs": 100
     },
     "files": {
-        "training": "~/Documents/Projects/aedes_model/Data/train_data.pd",
-        "validation": "~/Documents/Projects/aedes_model/Data/val_data.pd",
-        "testing": "~/Documents/Projects/aedes_model/Data/test_data.pd",
+        "training": "~/Documents/Projects/aedes_model/DataFrames/train_data.pd",
+        "validation": "~/Documents/Projects/aedes_model/DataFrames/val_data.pd",
+        "testing": "~/Documents/Projects/aedes_model/DataFrames/test_data.pd",
         "model": "~/Documents/Projects/aedes_model/models/saved_models/lstm_model.h5"
     }
 }
