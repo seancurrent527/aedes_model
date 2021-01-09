@@ -38,7 +38,7 @@ def load_results_data(filename, cities = None):
     groups = results.groupby(by = 'County')
     output = {}
     for city, subset in groups:
-        if cities is not None and city in cities:
+        if cities is None or city in cities:
             for year in [2019, 2020]:
                 label = city + ',' + str(year)
                 y_pred = subset[subset['Year'] == year]['Neural Network']

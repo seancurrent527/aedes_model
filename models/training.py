@@ -69,16 +69,36 @@ def main():
     testing = format_data(testing, config['data']['data_shape'], config['data']['samples_per_city'],
                           scaler=scaler)
 
-    
-    temp_training = np.random.randint(0, len(training) - 1, size = 30000)
-    hi_temp = training[temp_training[:15000]]
-    lo_temp = training[temp_training[15000:]]
-    hi_temp[:, :, :2] = np.random.normal(1.1, 0.05, size = (len(hi_temp), config['data']['data_shape'][0], 2))
-    hi_temp[:, :, -1] = 0
-    lo_temp[:, :, :2] = np.random.normal(-0.1, 0.05, size = (len(lo_temp), config['data']['data_shape'][0], 2))
-    lo_temp[:, :, -1] = 0
-    #training = np.concatenate([training, hi_temp, lo_temp])
-    
+    #if config['data']['temperature_augmentation']:
+    #    temp_training = np.random.randint(0, len(training) - 1, size = 30000)
+    #    hi_temp = training[temp_training[:15000]]
+    #    lo_temp = training[temp_training[15000:]]
+    #    hi_temp[:, :, 0] = np.random.normal(1.1, 0.05, size = (len(hi_temp), config['data']['data_shape'][0],))
+    #    hi_temp[:, :, -1] = 0
+    #    lo_temp[:, :, 1] = np.random.normal(-0.1, 0.05, size = (len(lo_temp), config['data']['data_shape'][0],))
+    #    lo_temp[:, :, -1] = 0
+    #    training = np.concatenate([training, hi_temp, lo_temp])
+        
+    if config['data']['temperature_augmentation']==True:
+        temp_training = np.random.randint(0, len(training) - 1, size = 30000)
+        hi_temp = np.copy(training[temp_training[:15000]])
+        lo_temp = np.copy(training[temp_training[15000:]])
+        for i in range(0,len(hi_temp)):
+            #scaler.transform for 41C is 0.87
+            #scaler.transform for 3C is 0.33
+            #might want to change this from uniform?
+            hi_avg=np.random.uniform(0.87,1)
+            lo_avg=np.random.uniform(0,0.33)
+
+            lo_shift=lo_avg - np.average(np.concatenate((lo_temp[i,:,0],lo_temp[i,:,1])))
+            lo_temp[i,:,:2]+=lo_shift
+            lo_temp[i,:,-1]=0
+            
+            hi_shift=hi_avg - np.average(np.concatenate((hi_temp[i,:,0],hi_temp[i,:,1])))
+            hi_temp[i,:,:2]+=hi_shift
+            hi_temp[i,:,-1]=0
+        training = np.concatenate([training, hi_temp, lo_temp])
+
     X_train, y_train = split_and_shuffle(training)
     X_val, y_val = split_and_shuffle(validation)
     X_test, y_test = split_and_shuffle(testing)
@@ -94,8 +114,8 @@ def main():
                   callbacks = [tf.keras.callbacks.TensorBoard(), tf.keras.callbacks.EarlyStopping(patience = 30, restore_best_weights = True)])
         model.save(model_file, save_format = 'h5')
 
-        visuals.plot_loss(history)
-        visuals.plot_r2(history)
+        #visuals.plot_loss(history)
+        #visuals.plot_r2(history)
 
 
 if __name__ == '__main__':
