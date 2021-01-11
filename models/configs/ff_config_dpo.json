@@ -1,5 +1,5 @@
 {
-    "model": "conv_model",
+    "model": "ff_model",
     "data": {
         "data_shape": [90, 4],
         "samples_per_city": 1000,
