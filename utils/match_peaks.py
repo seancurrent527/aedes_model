@@ -5,6 +5,9 @@ from scipy.signal import savgol_filter
 import tensorflow as tf
 import tensorflow.keras.backend as K
 import matplotlib.pyplot as plt
+from collections import defaultdict
+
+#python match_peaks.py -r results/Test/Test_ff_model_predictions
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -34,12 +37,11 @@ def load_val_data():
 
 def load_results_data(filename, cities = None):
     results = pd.read_csv(filename)
-    #groups = results[results['Year'] >= 2019].groupby(by = 'County')
     groups = results.groupby(by = 'County')
     output = {}
     for city, subset in groups:
         if cities is None or city in cities:
-            for year in [2019, 2020]:
+            for year in range(2011, 2021):
                 label = city + ',' + str(year)
                 y_pred = subset[subset['Year'] == year]['Neural Network']
                 y_true = subset[subset['Year'] == year]['MoLS']
@@ -97,13 +99,17 @@ def min_offset(peaks_pred, peaks_true):
     offsets = []
     if num_peaks_true and num_peaks_pred:
         for peak in peaks_true:
-            peak_offsets = [(-(peak[0] - x[0]), -(peak[1] - x[1])) for x in peaks_pred]
-            offsets.append(min(peak_offsets, key = lambda x: abs(x[0]) + abs(x[1])))
-        mean_start_offset = sum(x[0] for x in offsets) / len(offsets)
-        mean_end_offset = sum(x[1] for x in offsets) / len(offsets)
-    else:
-        mean_start_offset = mean_end_offset = 0
-    return {'True Peaks': num_peaks_true, 'Predicted Peaks': num_peaks_pred, 'Mean Start Offset': mean_start_offset, 'Mean End Offset': mean_end_offset}
+            mind = np.inf
+            mino = None
+            for pred in peaks_pred:
+                offset = ((pred[0] - peak[0]), (pred[1] - peak[1]))
+                distance = abs(offset[0]) + abs(offset[1])
+                if distance < mind:
+                    mind = distance
+                    mino = offset
+            mino = mino[0] / (peak[1] - peak[0]), mino[1]  / (peak[1] - peak[0])
+            offsets.append(mino)
+    return {'True Peaks': num_peaks_true, 'Predicted Peaks': num_peaks_pred, 'Offsets': offsets}
 
 def compare_peaks(output, metric, threshold=0.8, peak_width = 5, scale_to_1 = False, smooth = True):
     results = {}
@@ -138,29 +144,26 @@ def main():
     if args.county:
         indices = COUNTIES
     else:
-        indices = sorted(set(city_to_state['State']))
+        indices = sorted(set(city_to_state['State'])) + ['All']
     
     indices = indices + [s + '_s' for s in indices]
     table_data = pd.DataFrame(0.0, index = indices, columns=['n', '20% n', '40% n', '60% n', '80% n'] + [f'{i - i % 2}0% Threshold ({"end" if i % 2 else "start"})' for i in range(2, 10)])
 
+    stddev_data = pd.DataFrame(0.0, index = indices, columns=['n', '20% n', '40% n', '60% n', '80% n'] + [f'{i - i % 2}0% Threshold ({"end" if i % 2 else "start"})_stddev' for i in range(2, 10)])
+
     for scale in [True, False]:
 
         threshold_array = []
-        matching_array = []
-        less_array = []
-        more_array = []
+        peaks_array = []
         start_array = []
         end_array = []
 
         for threshold in sorted([0.2, 0.4, 0.6, 0.8] + list(np.linspace(0.01, 0.99, 200))):
             results = compare_peaks(output, min_offset, threshold=threshold, peak_width=args.width, scale_to_1=scale, smooth=smooth)
 
-            matching_peaks = 0
-            offset_divisor = 0
-            matching_start_offset = 0
-            matching_end_offset = 0
-            less_peaks = 0
-            more_peaks = 0
+            start_offsets = defaultdict(list)
+            end_offsets = defaultdict(list)
+            peak_difference = 0
             for city, result in results.items():
                 if args.county:
                     index = city[:-5] + '_s' * scale
@@ -168,35 +171,50 @@ def main():
                     index = city[:-5].split(',')[1] + '_s' * scale
                 if threshold == 0.2:
                     table_data['n'][index] += 1
+                    stddev_data['n'][index] += 1
+                    table_data['n']['All' + '_s' * scale] += 1
+                    stddev_data['n']['All' + '_s' * scale] += 1
 
-                if result['True Peaks'] == result['Predicted Peaks']:
-                    matching_peaks += result['True Peaks']
-                    matching_start_offset += result['Mean Start Offset'] * result['True Peaks']
-                    matching_end_offset += result['Mean End Offset'] * result['True Peaks']
-                    offset_divisor += 1
+                if result['Offsets']:
+                    start, end = zip(*result['Offsets'])
+                    start_offsets[index].extend(start)
+                    end_offsets[index].extend(end)
+                    start_offsets['all'].extend(start)
+                    end_offsets['all'].extend(end)
 
-                    if threshold in [0.2, 0.4, 0.6, 0.8]:
-                        table_data[f'{int(threshold * 100)}% Threshold (start)'][index] += result['Mean Start Offset']
-                        table_data[f'{int(threshold * 100)}% Threshold (end)'][index] += result['Mean End Offset']
-                        table_data[f'{int(threshold * 100)}% n'][index] += 1
+                peak_difference += result['Predicted Peaks'] - result['True Peaks']
 
-                elif result['True Peaks'] < result['Predicted Peaks']:
-                    more_peaks += result['Predicted Peaks'] - result['True Peaks']
-                else:
-                    less_peaks += result['True Peaks'] - result['Predicted Peaks']
+                if threshold in [0.2, 0.4, 0.6, 0.8]:
+                    table_data[f'{int(threshold * 100)}% n'][index] += result['Predicted Peaks'] - result['True Peaks']
+                    stddev_data[f'{int(threshold * 100)}% n'][index] += result['Predicted Peaks'] - result['True Peaks']
+                    table_data[f'{int(threshold * 100)}% n']['All' + '_s' * scale] += result['Predicted Peaks'] - result['True Peaks']
+                    stddev_data[f'{int(threshold * 100)}% n']['All' + '_s' * scale] += result['Predicted Peaks'] - result['True Peaks']
+
+            if threshold in [0.2, 0.4, 0.6, 0.8]:
+                for index in start_offsets:
+                    table_data[f'{int(threshold * 100)}% Threshold (start)'][index] = np.mean(start_offsets[index])
+                    table_data[f'{int(threshold * 100)}% Threshold (end)'][index] = np.mean(end_offsets[index])
+                    stddev_data[f'{int(threshold * 100)}% Threshold (start)_stddev'][index] = np.std(start_offsets[index])
+                    stddev_data[f'{int(threshold * 100)}% Threshold (end)_stddev'][index] = np.std(end_offsets[index])
+                table_data[f'{int(threshold * 100)}% Threshold (start)']['All' + '_s' * scale] = np.mean(start_offsets['all'])
+                table_data[f'{int(threshold * 100)}% Threshold (end)']['All' + '_s' * scale] = np.mean(end_offsets['all'])
+                stddev_data[f'{int(threshold * 100)}% Threshold (start)_stddev']['All' + '_s' * scale] = np.std(start_offsets['all'])
+                stddev_data[f'{int(threshold * 100)}% Threshold (end)_stddev']['All' + '_s' * scale] = np.std(end_offsets['all'])
+                #plt.hist(start_offsets['all'])
+                #plt.show()
+                #plt.hist(end_offsets['all'])
+                #plt.show()
+                
+
 
             threshold_array.append(threshold)
-            matching_array.append(matching_peaks)
-            less_array.append(less_peaks)
-            more_array.append(more_peaks)
-            start_array.append(matching_start_offset / offset_divisor)
-            end_array.append(matching_end_offset / offset_divisor)
+            peaks_array.append(peak_difference)
+            start_array.append(np.mean(start_offsets['all']))
+            end_array.append(np.mean(end_offsets['all']))
 
         
         fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize = (8,10))
-        ax1.plot(threshold_array, matching_array, color = 'tab:green', marker = '', linestyle = '-', label = 'Matching Peaks')
-        ax1.plot(threshold_array, less_array, color = 'tab:blue', marker = '', linestyle = '-', label = 'Missing Peaks')
-        ax1.plot(threshold_array, more_array, color = 'tab:orange', marker = '', linestyle = '-', label = 'Extra Peaks')
+        ax1.plot(threshold_array, peaks_array, color = 'tab:blue', marker = '', linestyle = '-', label = 'Difference in Number of Peaks')
         ax2.plot(threshold_array, start_array, color = 'tab:green', marker = '', linestyle = '-', label = 'Start-of-Peak offset')
         ax2.plot(threshold_array, end_array, color = 'tab:red', marker = '', linestyle = '-', label = 'End-of-Peak offset')
 
@@ -218,17 +236,11 @@ def main():
 
         #plt.show()
 
-    table_data['20% Threshold (start)'] /= table_data['20% n']
-    table_data['20% Threshold (end)'] /= table_data['20% n']
-    table_data['40% Threshold (start)'] /= table_data['40% n']
-    table_data['40% Threshold (end)'] /= table_data['40% n']
-    table_data['60% Threshold (start)'] /= table_data['60% n']
-    table_data['60% Threshold (end)'] /= table_data['60% n']
-    table_data['80% Threshold (start)'] /= table_data['80% n']
-    table_data['80% Threshold (end)'] /= table_data['80% n']
     print(table_data)
+    print(stddev_data)
 
-    table_data.to_csv('tables/' + args.results[:-4].split('/')[-1] + '_state_threshold_table.csv')
+    table_data.to_csv('tables/' + args.results[8:-4] + '_state_threshold_table.csv')
+    stddev_data.to_csv('tables/' + args.results[8:-4] + '_state_threshold_table_stddev.csv')
 
 if __name__ == '__main__':
     main()
