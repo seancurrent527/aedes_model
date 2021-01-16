@@ -139,7 +139,7 @@ def main():
         output = run_model(model, val_data)
         smooth = True
 
-    city_to_state = pd.read_csv('~/Documents/Projects/aedes_model/Data/All_counties.csv')
+    city_to_state = pd.read_csv('~/Documents/OSU/research/Aedes/Data/All_counties.csv')
     
     if args.county:
         indices = COUNTIES
