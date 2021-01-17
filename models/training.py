@@ -91,12 +91,12 @@ def main():
             lo_avg=np.random.uniform(0,0.33)
 
             lo_shift=lo_avg - np.average(np.concatenate((lo_temp[i,:,0],lo_temp[i,:,1])))
-            lo_temp[i,:,:2]+=lo_shift
-            lo_temp[i,:,-1]=0
+            lo_temp[i,69:,:2]+=lo_shift
+            lo_temp[i,69:,-1]=0
             
             hi_shift=hi_avg - np.average(np.concatenate((hi_temp[i,:,0],hi_temp[i,:,1])))
-            hi_temp[i,:,:2]+=hi_shift
-            hi_temp[i,:,-1]=0
+            hi_temp[i,69:,:2]+=hi_shift
+            hi_temp[i,69:,-1]=0
         training = np.concatenate([training, hi_temp, lo_temp])
 
     X_train, y_train = split_and_shuffle(training)
