@@ -144,6 +144,7 @@ def main():
         
         results = compare_peaks(output, min_offset, threshold, 7, 7)
         for index, result in results.items():
+            # index is (city, state, year)
             citystate = index[:-1]
             
             if index == county:
@@ -154,6 +155,11 @@ def main():
             
             off_table.loc[index, 'SeasonWidth'] = season_width[citystate]
             off_table.loc[index, threshold_str] = np.mean(result['D_off']) / season_width[citystate]
+
+            # SeasonLength = f(c, s)
+            # D_csy = f(c, s, y) / SeasonLength(c, s)
+            
+            # Mean = mean(D for c, for s, for y)
 
     terms = args.results.split('_')
     modname = '_'.join([terms[1]] + terms[3:-1])

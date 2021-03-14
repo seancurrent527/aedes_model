@@ -40,19 +40,11 @@ def merge_tables(d_on, d_off):
 def rank_models(mean_tab, std_tab):
     results = defaultdict(list)
     for threshold in ("20%", "40%", "60%", "80%"):
-        mean_sorted = mean_tab[threshold].abs().argsort()
-        std_sorted = std_tab[threshold].argsort()
-        mean_seen = set()
-        std_seen = set()
-        for i in range(len(mean_sorted)):
-            mean_val = mean_tab["Model"].iloc[mean_sorted.iloc[i]]
-            std_val = std_tab["Model"].iloc[std_sorted.iloc[i]]
-            if mean_val in std_seen:
-                results[threshold].append(mean_val)
-            mean_seen.add(mean_val)
-            if std_val in mean_seen:
-                results[threshold].append(std_val)
-            std_seen.add(std_val)
+        means = mean_tab[threshold].abs()
+        stds = std_tab[threshold]
+        ranking = (means * stds).argsort()
+        for i in range(len(ranking)):
+            results[threshold].append(mean_tab["Model"].iloc[ranking.iloc[i]])
     return results
 
 def reverse_rank(rank):
